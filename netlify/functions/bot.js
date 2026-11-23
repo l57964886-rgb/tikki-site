@@ -49,10 +49,11 @@ export const handler = async (event) => {
     const url = `https://${event.headers.host}/.netlify/functions/bot`;
     const me = await tg("getMe");
     const hook = await tg("setWebhook", { url, allowed_updates: ["message", "callback_query"] });
+    const tokInfo = TOKEN ? `задан, ${TOKEN.length} символов, начало ${TOKEN.slice(0, 4)}…` : "НЕ ЗАДАН";
     return {
       statusCode: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
-      body: `Вебхук: ${url}\ngetMe: ${JSON.stringify(me)}\nsetWebhook: ${JSON.stringify(hook)}\n`,
+      body: `Вебхук: ${url}\nTG_TOKEN: ${tokInfo}\ngetMe: ${JSON.stringify(me)}\nsetWebhook: ${JSON.stringify(hook)}\n`,
     };
   }
 
@@ -106,5 +107,4 @@ export const handler = async (event) => {
 
   return { statusCode: 200, body: "ok" };
 };
-
 
