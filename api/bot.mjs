@@ -56,6 +56,18 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--tex
 </div>
 
 <div class="card">
+<h2>★ Звания (благодарности)</h2>
+<label for="tnick">Ник или ID аккаунта</label>
+<input id="tnick" placeholder="ladygagaholic или 7">
+<label for="ttl">Звание</label>
+<input id="ttl" placeholder="Помощь с озвучкой" maxlength="32">
+<button id="setTitle">Выдать звание</button>
+<div class="msg" id="msgTitle"></div>
+<div class="hint">Пустое поле звания — снять. Появится в профиле и в комментариях.</div>
+<div class="list" id="listUsers"></div>
+</div>
+
+<div class="card">
 <h2>📣 Рассылка всем</h2>
 <label for="txt">Текст сообщения</label>
 <textarea id="txt" placeholder="Привет, скучаешь? 🐞&#10;Новая серия — «Камило». Заходи:&#10;https://tikki-trikki.ru"></textarea>
@@ -107,6 +119,34 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--tex
   .then(function(j){if(j&&j.ok)loadNews()});
  }
 
+ function loadUsers(){
+  if(!k())return;
+  fetch(FN+"?users=1&key="+encodeURIComponent(k())).then(function(r){return r.json()}).then(function(j){
+   var box=document.getElementById("listUsers");
+   if(!j||!j.ok||!j.users.length){box.innerHTML='<div class="hint">Пока нет аккаунтов</div>';return}
+   box.innerHTML=j.users.map(function(u){
+    return '<div class="item"><div>#'+u.id+' '+esc(u.nick)+(u.title?' · '+esc(u.title):'')+
+      '<small>'+(u.tg?'tg '+u.tg:'без Telegram')+' · с '+u.since+'</small></div>'+
+      '<button data-id="'+u.id+'">Выбрать</button></div>'}).join("");
+   box.querySelectorAll("button[data-id]").forEach(function(b){
+    b.onclick=function(){document.getElementById("tnick").value=b.getAttribute("data-id");}});
+  }).catch(function(){});
+ }
+
+ document.getElementById("setTitle").onclick=function(){
+  var nick=document.getElementById("tnick").value.trim(),
+      ttl=document.getElementById("ttl").value.trim();
+  if(!k()){say("msgTitle","Введите ключ","err");return}
+  if(!nick){say("msgTitle","Введите ник","err");return}
+  say("msgTitle","Сохраняю…");
+  fetch(FN+"?title_set=1",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({key:k(),nick:/^\d+$/.test(nick)?"":nick,id:/^\d+$/.test(nick)?parseInt(nick,10):0,title:ttl})}).then(function(r){return r.json()})
+  .then(function(j){
+   if(j&&j.ok) say("msgTitle","Готово: «"+(j.title||"без звания")+"» у "+j.nick,"ok");
+   else say("msgTitle","Ошибка: "+((j&&j.error)||"?"),"err")})
+  .catch(function(){say("msgTitle","Сайт не ответил","err")});
+ };
+
  document.getElementById("go").onclick=function(){
   var t=document.getElementById("txt").value.trim();
   if(!k()){say("msg","Введите ключ","err");return}
@@ -124,8 +164,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--tex
  };
 
  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
- key.addEventListener("change",loadNews);
- if(k())loadNews();
+ key.addEventListener("change",function(){loadNews();loadUsers();});
+ if(k()){loadNews();loadUsers();}
 })();
 </script></body></html>`;
 
@@ -371,6 +411,23 @@ async function handle(req, res) {
   /* ---- админские действия (по ключу) ---- */
   const adminOk = BROADCAST_KEY && body.key === BROADCAST_KEY;
 
+  if (q.users) {
+    if (!BROADCAST_KEY || q.key !== BROADCAST_KEY) return res.status(403).json({ ok: false, error: "Неверный ключ" });
+    const r = await apiCall({ action: "users_list", sig: sig("users_list") });
+    return res.status(200).json(r || { ok: false, error: "Сервер не ответил" });
+  }
+
+  if (q.title_set) {
+    if (!adminOk) return res.status(403).json({ ok: false, error: "Неверный ключ" });
+    const r = await apiCall({
+      action: "title_set",
+      nick: String(body.nick || "").trim(),
+      title: String(body.title || "").trim(),
+      sig: sig("title_set"),
+    });
+    return res.status(200).json(r || { ok: false, error: "Сервер не ответил" });
+  }
+
   if (q.news_add) {
     if (!adminOk) return res.status(403).json({ ok: false, error: "Неверный ключ" });
     const r = await newsAdd(body.label || "", body.title || "", body.url || "");
@@ -486,3 +543,4 @@ export default async function handler(req, res) {
 
 // больше времени на ответ (Vercel Hobby разрешает до 60 с)
 export const config = { maxDuration: 30 };
+
