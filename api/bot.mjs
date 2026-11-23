@@ -274,6 +274,18 @@ export default async function handler(req, res) {
     return res.status(200).send(PAGE);
   }
 
+  if (q.diag) {
+    const j = await apiCall({ action: "diag", sig: sig("diag") });
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    let out = "Диагностика\n\n";
+    if (j && j.ok && j.tables) {
+      for (const [k, v] of Object.entries(j.tables)) out += `${k}: ${v}\n`;
+    } else {
+      out += "Ошибка: " + JSON.stringify(j) + "\n";
+    }
+    return res.status(200).send(out);
+  }
+
   if (q.setup) {
     const host = req.headers.host;
     const url = `https://${host}/api/bot`;
@@ -396,4 +408,3 @@ export default async function handler(req, res) {
 
   return res.status(200).send("ok");
 }
-
