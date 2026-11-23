@@ -6,73 +6,129 @@ const SITE = "https://tikki-trikki.ru";
 const API = SITE + "/account.php";
 const WELCOME_IMG = SITE + "/img/tikki.png";
 
-/* ---------- страница рассылки (отдаётся по ?page=broadcast) ---------- */
-const PAGE = `<!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Рассылка — Тикки</title>
+/* ================= админ-страница (рассылка + новинки) ================= */
+const PAGE = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Тикки — админка</title>
 <style>
 :root{--bg:#12060f;--card:#1e0c19;--line:#3a1a30;--text:#f7ecf3;--dim:#a98b9e;--red:#ff2e63}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 20% -10%,#3a0b22,transparent),var(--bg);color:var(--text);font:16px/1.5 Nunito,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;justify-content:center;padding:28px 16px}
-.wrap{width:100%;max-width:640px}
-h1{font-size:1.4rem;margin:0 0 4px;display:flex;align-items:center;gap:10px}
-h1 img{width:40px;height:40px;border-radius:50%;box-shadow:0 0 18px rgba(255,46,99,.6)}
-.sub{color:var(--dim);margin:0 0 18px;font-size:.9rem}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
-label{display:block;font-size:.8rem;color:var(--dim);margin:14px 0 6px}
-label:first-child{margin-top:0}
-input,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#150910;color:var(--text);font:inherit}
-textarea{min-height:160px;resize:vertical}
-input:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(255,46,99,.18)}
-.row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-button{flex:1;min-width:150px;padding:13px 18px;border-radius:12px;border:0;background:var(--red);color:#fff;font:800 1rem Nunito,system-ui,sans-serif;cursor:pointer}
+body{margin:0;background:radial-gradient(900px 500px at 20% -10%,#3a0b22,transparent),var(--bg);color:var(--text);font:16px/1.5 Nunito,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:26px 16px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:680px}
+h1{font-size:1.35rem;margin:0 0 16px;display:flex;align-items:center;gap:10px}
+h1 img{width:38px;height:38px;border-radius:50%;box-shadow:0 0 18px rgba(255,46,99,.6)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+h2{font-size:1rem;margin:0 0 12px;color:var(--red)}
+label{display:block;font-size:.78rem;color:var(--dim);margin:12px 0 5px}
+label:first-of-type{margin-top:0}
+input,textarea{width:100%;padding:11px 13px;border-radius:11px;border:1px solid var(--line);background:#150910;color:var(--text);font:inherit}
+textarea{min-height:130px;resize:vertical}
+input:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(255,46,99,.16)}
+button{padding:12px 16px;border-radius:11px;border:0;background:var(--red);color:#fff;font:800 .95rem Nunito,system-ui,sans-serif;cursor:pointer;margin-top:12px}
 button.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:700}
-.msg{margin-top:14px;font-size:.9rem;min-height:20px}
+.msg{font-size:.88rem;min-height:18px;margin-top:10px}
 .msg.ok{color:#5ee39a}.msg.err{color:#ff7089}
-.count{margin-top:8px;font-size:.8rem;color:var(--dim)}
+.list{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.88rem}
+.item div{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item small{color:var(--dim);display:block;font-size:.72rem}
+.item button{margin:0;padding:6px 10px;font-size:.78rem;background:transparent;border:1px solid var(--red);color:var(--red)}
 .hint{color:var(--dim);font-size:.75rem;margin-top:6px}
-</style></head><body>
-<div class="wrap">
-<h1><img src="${WELCOME_IMG}" alt=""> Рассылка от Тикки</h1>
-<p class="sub">Сообщение уйдёт всем, кто когда-либо запускал бота.</p>
+</style></head><body><div class="wrap">
+<h1><img src="${WELCOME_IMG}" alt=""> Админка Тикки</h1>
+
 <div class="card">
-<label for="key">Ключ рассылки</label>
-<input id="key" type="password" placeholder="тот же, что BROADCAST_KEY в Vercel" autocomplete="off">
+<label for="key">Ключ (BROADCAST_KEY)</label>
+<input id="key" type="password" placeholder="тот, что в Vercel" autocomplete="off">
 <div class="hint">Сохраняется в этом браузере.</div>
+</div>
+
+<div class="card">
+<h2>🆕 Новинки для кнопки «Что нового»</h2>
+<label for="nl">Подпись (например «7 сезон · 7 серия»)</label>
+<input id="nl" placeholder="7 сезон · 7 серия">
+<label for="nt">Название серии</label>
+<input id="nt" placeholder="Камило">
+<label for="nu">Ссылка</label>
+<input id="nu" placeholder="https://tikki-trikki.ru/#play/s7/7">
+<button id="addNew">Добавить в новинки</button>
+<div class="msg" id="msgNew"></div>
+<div class="list" id="listNew"></div>
+</div>
+
+<div class="card">
+<h2>📣 Рассылка всем</h2>
 <label for="txt">Текст сообщения</label>
-<textarea id="txt" placeholder="Привет! Скучаешь? 🐞&#10;А вот новая серия — «Камило». Заходи:&#10;https://tikki-trikki.ru"></textarea>
-<div class="row">
+<textarea id="txt" placeholder="Привет, скучаешь? 🐞&#10;Новая серия — «Камило». Заходи:&#10;https://tikki-trikki.ru"></textarea>
 <button id="go">Отправить всем</button>
 <button id="cnt" class="ghost">Сколько подписчиков</button>
-</div>
 <div class="msg" id="msg"></div>
-<div class="count" id="count"></div>
-</div></div>
+</div>
+</div>
 <script>
 (function(){
- var FN="/api/bot",key=document.getElementById("key"),txt=document.getElementById("txt"),
- msg=document.getElementById("msg"),cnt=document.getElementById("count"),
- go=document.getElementById("go"),btnCnt=document.getElementById("cnt");
+ var FN="/api/bot",key=document.getElementById("key");
  try{key.value=localStorage.getItem("tikki_bk")||""}catch(e){}
  key.addEventListener("change",function(){try{localStorage.setItem("tikki_bk",key.value)}catch(e){}});
- function say(t,c){msg.className="msg "+(c||"");msg.textContent=t}
- btnCnt.onclick=function(){say("Считаю…");fetch(FN+"?count=1").then(function(r){return r.text()}).then(function(t){cnt.textContent=t;say("")}).catch(function(){say("Не смог посчитать","err")})};
- go.onclick=function(){
-  var k=key.value.trim(),t=txt.value.trim();
-  if(!k){say("Введите ключ рассылки","err");return}
-  if(!t){say("Напишите текст","err");return}
+ function say(id,t,c){var el=document.getElementById(id);el.className="msg "+(c||"");el.textContent=t}
+ function k(){return key.value.trim()}
+
+ document.getElementById("addNew").onclick=function(){
+  var label=document.getElementById("nl").value.trim(),
+      title=document.getElementById("nt").value.trim(),
+      url=document.getElementById("nu").value.trim();
+  if(!k()){say("msgNew","Введите ключ","err");return}
+  if(!title){say("msgNew","Нужно название","err");return}
+  if(!url){say("msgNew","Нужна ссылка","err");return}
+  say("msgNew","Добавляю…");
+  fetch(FN+"?news_add=1",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({key:k(),label:label,title:title,url:url})})
+  .then(function(r){return r.json()}).then(function(j){
+   if(j&&j.ok){say("msgNew","Добавлено ✓","ok");
+    document.getElementById("nt").value="";document.getElementById("nu").value="";loadNews()}
+   else say("msgNew","Ошибка: "+((j&&j.error)||"?"),"err")});
+ };
+
+ function loadNews(){
+  if(!k())return;
+  fetch(FN+"?news_list=1&key="+encodeURIComponent(k())).then(function(r){return r.json()}).then(function(j){
+   var box=document.getElementById("listNew");
+   if(!j||!j.ok||!j.items.length){box.innerHTML='<div class="hint">Пока пусто</div>';return}
+   box.innerHTML=j.items.map(function(it){
+    return '<div class="item"><div>'+esc(it.label)+' — '+esc(it.title)+'<small>'+esc(it.url)+'</small></div>'+
+     '<button data-id="'+it.id+'">Удалить</button></div>'}).join("");
+   box.querySelectorAll("button[data-id]").forEach(function(b){
+    b.onclick=function(){del(b.getAttribute("data-id"))}});
+  }).catch(function(){});
+ }
+ function del(id){
+  fetch(FN+"?news_del=1",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({key:k(),id:id})}).then(function(r){return r.json()})
+  .then(function(j){if(j&&j.ok)loadNews()});
+ }
+
+ document.getElementById("go").onclick=function(){
+  var t=document.getElementById("txt").value.trim();
+  if(!k()){say("msg","Введите ключ","err");return}
+  if(!t){say("msg","Напишите текст","err");return}
   if(!confirm("Отправить всем подписчикам?"))return;
-  go.disabled=true;say("Отправляю…");
-  fetch(FN+"?send=1",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:k,text:t})})
-  .then(function(r){return r.json()})
-  .then(function(j){go.disabled=false;
-   if(j&&j.ok){say("Готово. Доставлено: "+j.sent+", не дошло: "+j.failed,"ok");cnt.textContent="Всего подписчиков: "+j.total}
-   else{say("Ошибка: "+((j&&j.error)||"неизвестно"),"err")}})
-  .catch(function(){go.disabled=false;say("Сеть не отвечает","err")})};
+  say("msg","Отправляю…");
+  fetch(FN+"?send=1",{method:"POST",headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({key:k(),text:t})}).then(function(r){return r.json()})
+  .then(function(j){if(j&&j.ok)say("msg","Доставлено: "+j.sent+" из "+j.total,"ok");
+   else say("msg","Ошибка: "+((j&&j.error)||"?"),"err")});
+ };
+
+ document.getElementById("cnt").onclick=function(){
+  fetch(FN+"?count=1").then(function(r){return r.text()}).then(function(t){say("msg",t,"ok")});
+ };
+
+ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+ key.addEventListener("change",loadNews);
+ if(k())loadNews();
 })();
 </script></body></html>`;
 
+/* ================= Telegram API ================= */
 async function tg(method, params) {
   const res = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
     method: "POST",
@@ -91,17 +147,44 @@ async function apiCall(payload) {
   return res ? res.json().catch(() => null) : null;
 }
 
-async function register(chat, username) {
-  const sig = createHmac("sha256", TOKEN).update("sub|" + chat).digest("hex");
-  await apiCall({ action: "tg_sub", chat_id: String(chat), username: username || "", sig });
-}
+const sig = (s) => createHmac("sha256", TOKEN).update(s).digest("hex");
 
+/* --- подписчики --- */
+async function register(chat, username) {
+  await apiCall({ action: "tg_sub", chat_id: String(chat), username: username || "", sig: sig("sub|" + chat) });
+}
 async function subsList() {
-  const sig = createHmac("sha256", TOKEN).update("list").digest("hex");
-  const j = await apiCall({ action: "tg_subs", sig });
+  const j = await apiCall({ action: "tg_subs", sig: sig("list") });
   return j && j.ok && Array.isArray(j.ids) ? j.ids : [];
 }
 
+/* --- новинки --- */
+async function newsList() {
+  const j = await apiCall({ action: "news_list", sig: sig("news_list") });
+  return j && j.ok && Array.isArray(j.items) ? j.items : [];
+}
+async function newsAdd(label, title, url) {
+  return apiCall({ action: "news_add", label, title, url, sig: sig("news_add") });
+}
+async function newsDel(id) {
+  return apiCall({ action: "news_del", id: String(id), sig: sig("news_del") });
+}
+
+/* --- память о своих сообщениях (для самоочистки) --- */
+async function remember(chat, resp) {
+  const mid = resp && resp.ok && resp.result && resp.result.message_id;
+  if (!mid) return;
+  await apiCall({ action: "tg_log", chat_id: String(chat), message_id: String(mid), sig: sig("log|" + chat + "|" + mid) });
+}
+async function purgeOld(chat) {
+  const j = await apiCall({ action: "tg_purge", chat_id: String(chat), sig: sig("purge|" + chat) });
+  if (!j || !j.ok || !Array.isArray(j.ids)) return;
+  for (const id of j.ids) {
+    await tg("deleteMessage", { chat_id: chat, message_id: id });
+  }
+}
+
+/* ================= контент бота ================= */
 const mainKeyboard = {
   inline_keyboard: [
     [{ text: "🆕 Что нового", callback_data: "new" }],
@@ -126,38 +209,45 @@ const welcome = (first) =>
 async function sendPhotoOr(chat, photo, caption, keyboard) {
   const params = { chat_id: chat, photo, caption: (caption || "").slice(0, 1024) };
   if (keyboard) params.reply_markup = keyboard;
-  const r = await tg("sendPhoto", params);
-  if (r && r.ok) return true;
-  const msg = { chat_id: chat, text: caption };
-  if (keyboard) msg.reply_markup = keyboard;
-  await tg("sendMessage", msg);
-  return false;
-}
-
-async function newest() {
-  const res = await fetch(SITE + "/new.json?t=" + Date.now()).catch(() => null);
-  if (!res || !res.ok) return null;
-  const j = await res.json().catch(() => null);
-  return j && Array.isArray(j.items) ? j : null;
+  let r = await tg("sendPhoto", params);
+  if (!(r && r.ok)) {
+    r = await tg("sendMessage", { chat_id: chat, text: caption, reply_markup: keyboard });
+  }
+  await remember(chat, r);
+  return r;
 }
 
 async function sendNew(chat) {
-  const data = await newest();
-  if (!data) {
-    await tg("sendMessage", { chat_id: chat, text: "Пока не могу получить новинки. Открой сайт: " + SITE, reply_markup: mainKeyboard });
+  const items = await newsList();
+  if (items.length) {
+    const lines = items.slice(0, 8).map((it, i) => `${i + 1}. ${it.label} — «${it.title}»`);
+    const rows = items.slice(0, 8).map((it) => [{ text: "▶ " + it.title, url: it.url }]);
+    const top = items[0];
+    const cover = top && /s7-|ch-/.test(top.url) ? SITE + "/img/thumbs/" + (top.url.split("/#play/")[1] || "").replace("/", "-") + ".jpg" : WELCOME_IMG;
+    await sendPhotoOr(chat, cover, "🆕 Что нового на сайте", null);
+    const r = await tg("sendMessage", { chat_id: chat, text: lines.join("\n"), reply_markup: { inline_keyboard: rows } });
+    await remember(chat, r);
+    return;
+  }
+
+  // если свой список пуст — берём new.json с сайта
+  const res = await fetch(SITE + "/new.json?t=" + Date.now()).catch(() => null);
+  const data = res && res.ok ? await res.json().catch(() => null) : null;
+  if (!data || !Array.isArray(data.items) || !data.items.length) {
+    const r = await tg("sendMessage", { chat_id: chat, text: "Пока новинок нет. Добавь их в админке: " + SITE, reply_markup: mainKeyboard });
+    await remember(chat, r);
     return;
   }
   const lines = data.items.map((it, i) => `${i + 1}. ${it.label} — «${it.title}»`);
   const rows = data.items.map((it) => [{ text: "▶ " + it.title, url: SITE + it.url }]);
   const top = data.items[0];
-  const cover = top ? SITE + "/img/thumbs/" + top.id + ".jpg" : WELCOME_IMG;
-  await sendPhotoOr(chat, cover, `🆕 Что нового на сайте · ${data.updated}`, null);
-  await tg("sendMessage", { chat_id: chat, text: lines.join("\n"), reply_markup: { inline_keyboard: rows } });
+  await sendPhotoOr(chat, SITE + "/img/thumbs/" + top.id + ".jpg", `🆕 Что нового · ${data.updated}`, null);
+  const r = await tg("sendMessage", { chat_id: chat, text: lines.join("\n"), reply_markup: { inline_keyboard: rows } });
+  await remember(chat, r);
 }
 
 async function confirmCode(code, tgId, nickname) {
-  const sig = createHmac("sha256", TOKEN).update(code + "|" + tgId).digest("hex");
-  return apiCall({ action: "tg_link", code, tg_id: tgId, nickname, sig });
+  return apiCall({ action: "tg_link", code, tg_id: tgId, nickname, sig: sig(code + "|" + tgId) });
 }
 
 async function broadcast(text) {
@@ -165,17 +255,18 @@ async function broadcast(text) {
   let sent = 0, failed = 0;
   for (const id of ids) {
     const r = await tg("sendMessage", { chat_id: id, text, reply_markup: mainKeyboard });
-    if (r && r.ok) sent++; else failed++;
+    if (r && r.ok) { sent++; await remember(id, r); } else failed++;
     await new Promise((res) => setTimeout(res, 40));
   }
   return { ok: true, total: ids.length, sent, failed };
 }
 
+/* ================= обработчик ================= */
 export default async function handler(req, res) {
   const q = req.query || {};
+  const body = typeof req.body === "string" ? (() => { try { return JSON.parse(req.body || "{}"); } catch (e) { return {}; } })() : req.body || {};
 
-  // страница рассылки
-  if (q.page === "broadcast") {
+  if (q.page === "broadcast" || q.page === "admin") {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     return res.status(200).send(PAGE);
   }
@@ -198,35 +289,44 @@ export default async function handler(req, res) {
       `Вебхук: ${url}\n` +
       `TG_TOKEN: ${tokInfo}\n` +
       `BROADCAST_KEY: ${BROADCAST_KEY ? "задан" : "НЕ ЗАДАН"}\n` +
-      `Страница рассылки: https://${host}/api/bot?page=broadcast\n` +
+      `Админка: https://${host}/api/bot?page=admin\n` +
       `getMe: ${JSON.stringify(me)}\n` +
       `setWebhook: ${JSON.stringify(hook)}\n` +
       `setMyCommands: ${JSON.stringify(cmds)}\n`
     );
   }
 
+  /* ---- админские действия (по ключу) ---- */
+  const adminOk = BROADCAST_KEY && body.key === BROADCAST_KEY;
+
+  if (q.news_add) {
+    if (!adminOk) return res.status(403).json({ ok: false, error: "Неверный ключ" });
+    const r = await newsAdd(body.label || "", body.title || "", body.url || "");
+    return res.status(200).json(r || { ok: false, error: "Сервер не ответил" });
+  }
+  if (q.news_del) {
+    if (!adminOk) return res.status(403).json({ ok: false, error: "Неверный ключ" });
+    const r = await newsDel(body.id);
+    return res.status(200).json(r || { ok: false, error: "Сервер не ответил" });
+  }
+  if (q.news_list) {
+    if (!BROADCAST_KEY || q.key !== BROADCAST_KEY) return res.status(403).json({ ok: false, error: "Неверный ключ" });
+    return res.status(200).json({ ok: true, items: await newsList() });
+  }
   if (q.send) {
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-    if (!BROADCAST_KEY || body.key !== BROADCAST_KEY) {
-      return res.status(403).json({ ok: false, error: "Неверный ключ" });
-    }
+    if (!adminOk) return res.status(403).json({ ok: false, error: "Неверный ключ" });
     const text = (body.text || "").trim();
     if (!text) return res.status(400).json({ ok: false, error: "Пустой текст" });
     return res.status(200).json(await broadcast(text.slice(0, 4000)));
   }
-
   if (q.count) {
     const ids = await subsList();
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     return res.status(200).send(`Подписчиков: ${ids.length}`);
   }
 
-  let update = {};
-  try {
-    update = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-  } catch (e) {
-    return res.status(200).send("ok");
-  }
+  /* ---- обновления от Telegram ---- */
+  const update = body;
 
   const cb = update.callback_query;
   if (cb) {
@@ -255,34 +355,37 @@ export default async function handler(req, res) {
   if (payload) {
     const code = payload.toUpperCase();
     const r = await confirmCode(code, String(msg.from.id), (msg.from.username || first || "").slice(0, 64));
-    if (r && r.ok) {
-      await tg("sendMessage", {
-        chat_id: chat,
-        text: "Готово ✨ Возвращайтесь на сайт — вы уже вошли в аккаунт.",
-        reply_markup: { inline_keyboard: [[{ text: "▶ Открыть сайт", url: SITE }]] },
-      });
-    } else {
-      await tg("sendMessage", {
-        chat_id: chat,
-        text: "Не получилось: код не найден или истёк (он живёт 15 минут).\nНажмите «🔑 Войти на сайт» и получите новый.",
-        reply_markup: mainKeyboard,
-      });
-    }
+    const sent = r && r.ok
+      ? await tg("sendMessage", {
+          chat_id: chat,
+          text: "Готово ✨ Возвращайтесь на сайт — вы уже вошли в аккаунт.",
+          reply_markup: { inline_keyboard: [[{ text: "▶ Открыть сайт", url: SITE }]] },
+        })
+      : await tg("sendMessage", {
+          chat_id: chat,
+          text: "Не получилось: код не найден или истёк (он живёт 15 минут).\nНажмите «🔑 Войти на сайт» и получите новый.",
+          reply_markup: mainKeyboard,
+        });
+    await remember(chat, sent);
     return res.status(200).send("ok");
   }
 
   if (text === "/start" || text === "start" || text === "") {
+    // сначала убираем свои прошлые сообщения, твои не трогаем
+    await purgeOld(chat);
     await sendPhotoOr(chat, WELCOME_IMG, welcome(first), mainKeyboard);
   } else if (text === "/new" || text === "/новое") {
     await sendNew(chat);
   } else if (text === "/site" || text === "сайт" || text.toLowerCase() === "site") {
-    await tg("sendMessage", { chat_id: chat, text: `Все серии, спецэпизоды, фильм и 63 чиби — тут:\n${SITE}`, reply_markup: mainKeyboard });
+    const r = await tg("sendMessage", { chat_id: chat, text: `Все серии, спецэпизоды, фильм и 63 чиби — тут:\n${SITE}`, reply_markup: mainKeyboard });
+    await remember(chat, r);
   } else {
-    await tg("sendMessage", {
+    const r = await tg("sendMessage", {
       chat_id: chat,
       text: "Я Тикки. Команды: /start — меню, /new — что нового, /site — ссылка.\nДля входа: получи код на сайте и пришли его сюда.",
       reply_markup: mainKeyboard,
     });
+    await remember(chat, r);
   }
 
   return res.status(200).send("ok");
