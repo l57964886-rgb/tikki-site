@@ -85,7 +85,8 @@ button.ghost{background:transparent;border:1px solid var(--line);color:var(--tex
   .then(function(r){return r.json()}).then(function(j){
    if(j&&j.ok){say("msgNew","Добавлено ✓","ok");
     document.getElementById("nt").value="";document.getElementById("nu").value="";loadNews()}
-   else say("msgNew","Ошибка: "+((j&&j.error)||"?"),"err")});
+   else say("msgNew","Ошибка: "+((j&&j.error)||"?"),"err")})
+  .catch(function(){say("msgNew","Сайт не ответил — проверь account.php","err")});
  };
 
  function loadNews(){
@@ -222,6 +223,7 @@ async function sendNew(chat) {
   if (items.length) {
     const lines = items.slice(0, 8).map((it, i) => `${i + 1}. ${it.label} — «${it.title}»`);
     const rows = items.slice(0, 8).map((it) => [{ text: "▶ " + it.title, url: it.url }]);
+    rows.push([{ text: "⬅ Назад", callback_data: "back" }]);
     const top = items[0];
     const cover = top && /s7-|ch-/.test(top.url) ? SITE + "/img/thumbs/" + (top.url.split("/#play/")[1] || "").replace("/", "-") + ".jpg" : WELCOME_IMG;
     await sendPhotoOr(chat, cover, "🆕 Что нового на сайте", null);
@@ -240,6 +242,7 @@ async function sendNew(chat) {
   }
   const lines = data.items.map((it, i) => `${i + 1}. ${it.label} — «${it.title}»`);
   const rows = data.items.map((it) => [{ text: "▶ " + it.title, url: SITE + it.url }]);
+  rows.push([{ text: "⬅ Назад", callback_data: "back" }]);
   const top = data.items[0];
   await sendPhotoOr(chat, SITE + "/img/thumbs/" + top.id + ".jpg", `🆕 Что нового · ${data.updated}`, null);
   const r = await tg("sendMessage", { chat_id: chat, text: lines.join("\n"), reply_markup: { inline_keyboard: rows } });
@@ -334,7 +337,9 @@ export default async function handler(req, res) {
     const chat = cb.message && cb.message.chat ? cb.message.chat.id : null;
     if (chat) {
       await register(chat, cb.from && cb.from.username);
+      await purgeOld(chat);
       if (cb.data === "new") await sendNew(chat);
+      else if (cb.data === "back") await sendPhotoOr(chat, WELCOME_IMG, welcome(cb.from && cb.from.first_name || "друг"), mainKeyboard);
     }
     return res.status(200).send("ok");
   }
@@ -347,6 +352,9 @@ export default async function handler(req, res) {
   const text = (msg.text || "").trim();
 
   await register(chat, msg.from && msg.from.username);
+
+  // убираем предыдущие сообщения бота, чтобы чат не засорялся
+  await purgeOld(chat);
 
   let payload = "";
   if (/^\/start\s+/.test(text)) payload = text.split(/\s+/)[1] || "";
@@ -371,8 +379,6 @@ export default async function handler(req, res) {
   }
 
   if (text === "/start" || text === "start" || text === "") {
-    // сначала убираем свои прошлые сообщения, твои не трогаем
-    await purgeOld(chat);
     await sendPhotoOr(chat, WELCOME_IMG, welcome(first), mainKeyboard);
   } else if (text === "/new" || text === "/новое") {
     await sendNew(chat);
