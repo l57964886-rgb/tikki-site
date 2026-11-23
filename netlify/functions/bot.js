@@ -49,7 +49,7 @@ export const handler = async (event) => {
     const url = `https://${event.headers.host}/.netlify/functions/bot`;
     const me = await tg("getMe");
     const hook = await tg("setWebhook", { url, allowed_updates: ["message", "callback_query"] });
-    const tokInfo = TOKEN ? `задан, ${TOKEN.length} символов, начало ${TOKEN.slice(0, 4)}…` : "НЕ ЗАДАН";
+    const tokInfo = TOKEN ? `задан, ${TOKEN.length} символов, ${TOKEN.slice(0, 4)}…${TOKEN.slice(-4)}` : "НЕ ЗАДАН";
     return {
       statusCode: 200,
       headers: { "Content-Type": "text/plain; charset=utf-8" },
