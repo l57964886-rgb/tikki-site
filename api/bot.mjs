@@ -136,7 +136,13 @@ async function tg(method, params) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params || {}),
   });
-  return res.json().catch(() => null);
+  const j = await res.json().catch(() => null);
+  if (!j || !j.ok) {
+    const chat = params && params.chat_id ? params.chat_id : 0;
+    const why = j ? `${j.error_code} ${j.description || ""}` : "нет ответа";
+    await dbg(chat, "tgerr", `${method}: ${why}`.slice(0, 200));
+  }
+  return j;
 }
 
 async function apiCall(payload) {
@@ -236,7 +242,9 @@ async function sendNew(chat) {
   const items = await newsList();
   if (items.length) {
     const lines = items.slice(0, 8).map((it, i) => `${i + 1}. ${it.label} — «${it.title}»`);
-    const rows = items.slice(0, 8).map((it) => [{ text: "▶ " + it.title, url: it.url }]);
+    const rows = items.slice(0, 8)
+      .filter((it) => /^https?:\/\//i.test(String(it.url || "")))
+      .map((it) => [{ text: "▶ " + it.title, url: it.url }]);
     rows.push([{ text: "⬅ Назад", callback_data: "back" }]);
     const top = items[0];
     const cover = thumbFor(top && top.url);
