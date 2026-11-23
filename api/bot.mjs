@@ -4,7 +4,7 @@ const TOKEN = process.env.TG_TOKEN || "";
 const BROADCAST_KEY = process.env.BROADCAST_KEY || "";
 const SITE = "https://tikki-trikki.ru";
 const API = SITE + "/account.php";
-const WELCOME_IMG = SITE + "/img/tikki.png";
+const WELCOME_IMG = SITE + "/img/tikki.jpg";
 
 /* ================= админ-страница (рассылка + новинки) ================= */
 const PAGE = `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">
