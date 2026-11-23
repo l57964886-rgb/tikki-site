@@ -218,6 +218,14 @@ async function sendPhotoOr(chat, photo, caption, keyboard) {
   return r;
 }
 
+function thumbFor(url) {
+  if (!url) return WELCOME_IMG;
+  const m = String(url).match(/#play\/([a-z]+)\/(\d+)/i);
+  if (!m) return WELCOME_IMG;
+  const id = m[1].toLowerCase() + "-" + ("0" + m[2]).slice(-2);
+  return SITE + "/img/thumbs/" + id + ".jpg";
+}
+
 async function sendNew(chat) {
   const items = await newsList();
   if (items.length) {
@@ -225,7 +233,7 @@ async function sendNew(chat) {
     const rows = items.slice(0, 8).map((it) => [{ text: "▶ " + it.title, url: it.url }]);
     rows.push([{ text: "⬅ Назад", callback_data: "back" }]);
     const top = items[0];
-    const cover = top && /s7-|ch-/.test(top.url) ? SITE + "/img/thumbs/" + (top.url.split("/#play/")[1] || "").replace("/", "-") + ".jpg" : WELCOME_IMG;
+    const cover = thumbFor(top && top.url);
     await sendPhotoOr(chat, cover, "🆕 Что нового на сайте", null);
     const r = await tg("sendMessage", { chat_id: chat, text: lines.join("\n"), reply_markup: { inline_keyboard: rows } });
     await remember(chat, r);
@@ -265,7 +273,7 @@ async function broadcast(text) {
 }
 
 /* ================= обработчик ================= */
-export default async function handler(req, res) {
+async function handle(req, res) {
   const q = req.query || {};
   const body = typeof req.body === "string" ? (() => { try { return JSON.parse(req.body || "{}"); } catch (e) { return {}; } })() : req.body || {};
 
@@ -407,4 +415,18 @@ export default async function handler(req, res) {
   }
 
   return res.status(200).send("ok");
+}
+
+export default async function handler(req, res) {
+  try {
+    return await handle(req, res);
+  } catch (e) {
+    const text = "Ошибка: " + (e && e.message ? e.message : String(e));
+    try {
+      const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      const chat = b.message && b.message.chat && b.message.chat.id;
+      if (chat) await tg("sendMessage", { chat_id: chat, text });
+    } catch (e2) {}
+    try { res.status(200).send("ok"); } catch (e3) {}
+  }
 }
