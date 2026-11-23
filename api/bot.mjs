@@ -306,6 +306,7 @@ async function handle(req, res) {
         { command: "site", description: "Ссылка на сайт" },
       ],
     });
+    const info = await tg("getWebhookInfo");
     const tokInfo = TOKEN ? `задан, ${TOKEN.length} символов, ${TOKEN.slice(0, 4)}…${TOKEN.slice(-4)}` : "НЕ ЗАДАН";
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     return res.status(200).send(
@@ -315,7 +316,9 @@ async function handle(req, res) {
       `Админка: https://${host}/api/bot?page=admin\n` +
       `getMe: ${JSON.stringify(me)}\n` +
       `setWebhook: ${JSON.stringify(hook)}\n` +
-      `setMyCommands: ${JSON.stringify(cmds)}\n`
+      `setMyCommands: ${JSON.stringify(cmds)}\n` +
+      `BUILD: bot-12\n` +
+      `getWebhookInfo: ${JSON.stringify(info)}\n`
     );
   }
 
