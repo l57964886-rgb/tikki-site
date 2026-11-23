@@ -184,15 +184,35 @@ async function dbg(chat, kind, info) {
   } catch (e) {}
 }
 
+/* свои сообщения копим в памяти запроса, в базу пишем одним вызовом в конце */
+let pendingIds = [];
+
 async function remember(chat, resp) {
   const mid = resp && resp.ok && resp.result && resp.result.message_id;
-  if (!mid) return;
-  await apiCall({ action: "tg_log", chat_id: String(chat), message_id: String(mid), sig: sig("log|" + chat + "|" + mid) });
+  if (mid) pendingIds.push(String(mid));
 }
+
+async function flushLogs(chat) {
+  if (!pendingIds.length) return;
+  const list = pendingIds.join(",");
+  pendingIds = [];
+  await apiCall({ action: "tg_logs", chat_id: String(chat), ids: list, sig: sig("logs|" + chat + "|" + list) });
+}
+
+/* один вызов к сайту: подписчик + список старых сообщений бота */
+async function hello(chat, username) {
+  const j = await apiCall({
+    action: "tg_hello",
+    chat_id: String(chat),
+    username: username || "",
+    sig: sig("hello|" + chat),
+  });
+  return j && j.ok && Array.isArray(j.ids) ? j.ids : [];
+}
+
 async function purgeOld(chat) {
-  const j = await apiCall({ action: "tg_purge", chat_id: String(chat), sig: sig("purge|" + chat) });
-  if (!j || !j.ok || !Array.isArray(j.ids)) return;
-  for (const id of j.ids) {
+  const ids = await hello(chat, "");
+  for (const id of ids) {
     await tg("deleteMessage", { chat_id: chat, message_id: id });
   }
 }
@@ -280,7 +300,7 @@ async function broadcast(text) {
   let sent = 0, failed = 0;
   for (const id of ids) {
     const r = await tg("sendMessage", { chat_id: id, text, reply_markup: mainKeyboard });
-    if (r && r.ok) { sent++; await remember(id, r); } else failed++;
+    if (r && r.ok) { sent++; pendingIds = []; await remember(id, r); await flushLogs(id); } else failed++;
     await new Promise((res) => setTimeout(res, 40));
   }
   return { ok: true, total: ids.length, sent, failed };
@@ -385,10 +405,12 @@ async function handle(req, res) {
     try { await tg("answerCallbackQuery", { callback_query_id: cb.id }); } catch (e) {}
     const chat = cb.message && cb.message.chat ? cb.message.chat.id : null;
     if (chat) {
-      await register(chat, cb.from && cb.from.username);
-      await purgeOld(chat);
+      pendingIds = [];
+      const oldIds = await hello(chat, cb.from && cb.from.username);
+      for (const id of oldIds) await tg("deleteMessage", { chat_id: chat, message_id: id });
       if (cb.data === "new") await sendNew(chat);
       else if (cb.data === "back") await sendPhotoOr(chat, WELCOME_IMG, welcome(cb.from && cb.from.first_name || "друг"), mainKeyboard);
+      await flushLogs(chat);
     }
     return res.status(200).send("ok");
   }
@@ -400,11 +422,10 @@ async function handle(req, res) {
   const first = (msg.from && msg.from.first_name) || "друг";
   const text = (msg.text || "").trim();
 
-  await dbg(chat, "in", text.slice(0, 200));
-  await register(chat, msg.from && msg.from.username);
-
-  // убираем предыдущие сообщения бота, чтобы чат не засорялся
-  await purgeOld(chat);
+  pendingIds = [];
+  // один вызов: подписчик + список старых сообщений бота
+  const oldIds = await hello(chat, msg.from && msg.from.username);
+  for (const id of oldIds) await tg("deleteMessage", { chat_id: chat, message_id: id });
 
   let payload = "";
   if (/^\/start\s+/.test(text)) payload = text.split(/\s+/)[1] || "";
@@ -425,15 +446,14 @@ async function handle(req, res) {
           reply_markup: mainKeyboard,
         });
     await remember(chat, sent);
+    await flushLogs(chat);
     return res.status(200).send("ok");
   }
 
   if (text === "/start" || text === "start" || text === "") {
     await sendPhotoOr(chat, WELCOME_IMG, welcome(first), mainKeyboard);
   } else if (text === "/new" || text === "/новое") {
-    await dbg(chat, "new", "start");
     await sendNew(chat);
-    await dbg(chat, "new", "done");
   } else if (text === "/site" || text === "сайт" || text.toLowerCase() === "site") {
     const r = await tg("sendMessage", { chat_id: chat, text: `Все серии, спецэпизоды, фильм и 63 чиби — тут:\n${SITE}`, reply_markup: mainKeyboard });
     await remember(chat, r);
@@ -446,6 +466,7 @@ async function handle(req, res) {
     await remember(chat, r);
   }
 
+  await flushLogs(chat);
   return res.status(200).send("ok");
 }
 
@@ -462,3 +483,6 @@ export default async function handler(req, res) {
     try { res.status(200).send("ok"); } catch (e3) {}
   }
 }
+
+// больше времени на ответ (Vercel Hobby разрешает до 60 с)
+export const config = { maxDuration: 30 };
