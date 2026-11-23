@@ -172,6 +172,12 @@ async function newsDel(id) {
 }
 
 /* --- память о своих сообщениях (для самоочистки) --- */
+async function dbg(chat, kind, info) {
+  try {
+    await apiCall({ action: "dbg", chat_id: String(chat || 0), kind: String(kind || ""), info: String(info || ""), sig: sig("dbg") });
+  } catch (e) {}
+}
+
 async function remember(chat, resp) {
   const mid = resp && resp.ok && resp.result && resp.result.message_id;
   if (!mid) return;
@@ -282,6 +288,18 @@ async function handle(req, res) {
     return res.status(200).send(PAGE);
   }
 
+  if (q.dbg_last) {
+    const j = await apiCall({ action: "dbg_last", sig: sig("dbg_last") });
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    let out = "Последние события\n\n";
+    if (j && j.ok) {
+      for (const r of j.rows) out += `${r.ts} | chat ${r.chat} | ${r.kind} | ${r.info}\n`;
+    } else {
+      out += "нет данных: " + JSON.stringify(j);
+    }
+    return res.status(200).send(out);
+  }
+
   if (q.diag) {
     const j = await apiCall({ action: "diag", sig: sig("diag") });
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -374,6 +392,7 @@ async function handle(req, res) {
   const first = (msg.from && msg.from.first_name) || "друг";
   const text = (msg.text || "").trim();
 
+  await dbg(chat, "in", text.slice(0, 200));
   await register(chat, msg.from && msg.from.username);
 
   // убираем предыдущие сообщения бота, чтобы чат не засорялся
@@ -404,7 +423,9 @@ async function handle(req, res) {
   if (text === "/start" || text === "start" || text === "") {
     await sendPhotoOr(chat, WELCOME_IMG, welcome(first), mainKeyboard);
   } else if (text === "/new" || text === "/новое") {
+    await dbg(chat, "new", "start");
     await sendNew(chat);
+    await dbg(chat, "new", "done");
   } else if (text === "/site" || text === "сайт" || text.toLowerCase() === "site") {
     const r = await tg("sendMessage", { chat_id: chat, text: `Все серии, спецэпизоды, фильм и 63 чиби — тут:\n${SITE}`, reply_markup: mainKeyboard });
     await remember(chat, r);
@@ -428,7 +449,7 @@ export default async function handler(req, res) {
     try {
       const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       const chat = b.message && b.message.chat && b.message.chat.id;
-      if (chat) await tg("sendMessage", { chat_id: chat, text });
+      if (chat) { await dbg(chat, "err", text.slice(0, 200)); await tg("sendMessage", { chat_id: chat, text }); }
     } catch (e2) {}
     try { res.status(200).send("ok"); } catch (e3) {}
   }
