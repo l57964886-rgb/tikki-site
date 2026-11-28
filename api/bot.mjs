@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 
 const TOKEN = process.env.TG_TOKEN || "";
 const BROADCAST_KEY = process.env.BROADCAST_KEY || "";
+const ADMIN_CHAT = process.env.ADMIN_CHAT_ID || "";   // куда присылать уведомления о комментариях
 const SITE = "https://tikki-trikki.ru";
 const API = SITE + "/account.php";
 const WELCOME_IMG = SITE + "/img/tikki.jpg";
@@ -390,6 +391,7 @@ async function handle(req, res) {
         { command: "start", description: "Главное меню" },
         { command: "new", description: "Что нового на сайте" },
         { command: "site", description: "Ссылка на сайт" },
+        { command: "id", description: "Мой chat_id для уведомлений" },
       ],
     });
     const info = await tg("getWebhookInfo");
@@ -410,6 +412,15 @@ async function handle(req, res) {
 
   /* ---- админские действия (по ключу) ---- */
   const adminOk = BROADCAST_KEY && body.key === BROADCAST_KEY;
+
+  if (q.notify) {
+    const expect = createHmac("sha256", TOKEN).update("notify").digest("hex");
+    if (!TOKEN || body.sig !== expect) return res.status(403).json({ ok: false, error: "Подпись не совпала" });
+    const text = String(body.text || "").slice(0, 900);
+    if (!ADMIN_CHAT) return res.status(200).json({ ok: false, error: "ADMIN_CHAT_ID не задан" });
+    const r = await tg("sendMessage", { chat_id: ADMIN_CHAT, text, disable_web_page_preview: true });
+    return res.status(200).json({ ok: !!(r && r.ok) });
+  }
 
   if (q.users) {
     if (!BROADCAST_KEY || q.key !== BROADCAST_KEY) return res.status(403).json({ ok: false, error: "Неверный ключ" });
@@ -504,6 +515,12 @@ async function handle(req, res) {
         });
     await remember(chat, sent);
     await flushLogs(chat);
+    return res.status(200).send("ok");
+  }
+
+  if (text === "/id") {
+    const r = await tg("sendMessage", { chat_id: chat, text: "Ваш chat_id: " + chat + "\nВпишите его в Vercel как ADMIN_CHAT_ID — и сюда будут приходить уведомления о комментариях." });
+    await remember(chat, r);
     return res.status(200).send("ok");
   }
 
