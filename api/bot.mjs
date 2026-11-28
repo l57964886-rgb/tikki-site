@@ -417,8 +417,9 @@ async function handle(req, res) {
     const expect = createHmac("sha256", TOKEN).update("notify").digest("hex");
     if (!TOKEN || body.sig !== expect) return res.status(403).json({ ok: false, error: "Подпись не совпала" });
     const text = String(body.text || "").slice(0, 900);
-    if (!ADMIN_CHAT) return res.status(200).json({ ok: false, error: "ADMIN_CHAT_ID не задан" });
-    const r = await tg("sendMessage", { chat_id: ADMIN_CHAT, text, disable_web_page_preview: true });
+    const to = String(body.chat_id || "").replace(/\D/g, "") || ADMIN_CHAT;
+    if (!to) return res.status(200).json({ ok: false, error: "Некуда отправлять" });
+    const r = await tg("sendMessage", { chat_id: to, text, disable_web_page_preview: true });
     return res.status(200).json({ ok: !!(r && r.ok) });
   }
 
